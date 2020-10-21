@@ -40,19 +40,6 @@ import qsearch
 from qsearch import unitaries, advanced_unitaries, post_processing, leap_compiler, multistart_solver, parallelizer, utils, reoptimizing_compiler
 #from qfast import *
 
-def state_fidelity(ori_circ, new_circ):
-    backend = Aer.get_backend('statevector_simulator')
-    job = execute(ori_circ, backend)
-    result = job.result()
-    u_ori = result.get_statevector(ori_circ)
-        
-    job = execute(new_circ, backend)
-    result = job.result()
-    u_new = result.get_statevector(new_circ)
-        
-    fid = qk.quantum_info.state_fidelity(u_ori, u_new)
-    return fid
-    
 def CouplingMap2DGrid(n_row, n_col):
     coupling_map = []
     for i in range(n_row):
@@ -77,44 +64,6 @@ def num_device_qubits(coupling_map):
         nodes.update([x,y])
     return len(nodes)
         
-def tket_preprocess(input_circuit, coupling_map):
-    dev = Device(Architecture(coupling_map))
-    circ = qiskit_to_tk(input_circuit)
-    cu = CompilationUnit(circ)
-    cxmapping = CXMappingPass(dev, LinePlacement(dev), directed_cx=False)
-    cxmapping.apply(cu)
-    mapped_circ = cu.circuit
-    change_basis_gates = RebaseIBM()
-    change_basis_gates.apply(mapped_circ)
-    return tk_to_qiskit(mapped_circ)
-
-def tket_preprocess_with_swap(input_circuit, coupling_map):
-    dev = Device(Architecture(coupling_map))
-    circ = qiskit_to_tk(input_circuit)
-    change_basis_gates = RebaseIBM()
-    change_basis_gates.apply(circ)
-    mapped_circ = route(circ, dev, bridge_lookahead=0)
-    return tk_to_qiskit(mapped_circ)
-    
-    
-    
-def tket_all_to_all(circuit):
-    circ_tk = qiskit_to_tk(circuit)
-    tk_backend = AerStateBackend()
-    tk_backend.compile_circuit(circ_tk)
-    new_circuit = tk_to_qiskit(circ_tk)
-    change_basis_gates = RebaseIBM()
-    change_basis_gates.apply(new_circuit)
-    return new_circuit
-        
-def qiskit_preprocess(input_circuit, coupling_map):
-    circ = transpile(circuits=input_circuit, basis_gates=['u3', 'cx'], coupling_map=coupling_map, optimization_level=3)
-    return circ
-
-def qiskit_preprocess_0(input_circuit, coupling_map):
-    circ = transpile(circuits=input_circuit, basis_gates=['u3', 'cx'], coupling_map=coupling_map, optimization_level=0)
-    return circ
-
 class RGate():
     def __init__(self, c = 0, t = 0, op = 0, isGate = True):
         self.c = c
